@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DChat · 对话</title>
+    <style>
+        /* 干净、现代、轻盈的聊天风格 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0e0e1a;  /* 深邃背景，映衬亮色气泡 */
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+        }
+
+        /* 主卡片 —— 模拟手机 / 桌面聊天窗口 */
+        .dchat {
+            width: 100%;
+            max-width: 420px;
+            height: 700px;
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+            transition: all 0.2s ease;
+        }
+
+        /* 头部 */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #f0f0f5;
+            flex-shrink: 0;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #5f6af0, #9f7aea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: 0 6px 12px rgba(95, 106, 240, 0.25);
+            margin-right: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .header-info h1 {
+            font-size: 17px;
+            font-weight: 600;
+            color: #11131f;
+            letter-spacing: -0.2px;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #2ecc71;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 3.5px #2ecc7133;
+            margin-left: 6px;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 消息区域 */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        /* 滚动条美化 */
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 8px;
+        }
+
+        /* 消息行 */
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.incoming {
+            justify-content: flex-start;
+        }
+
+        .message-row.outgoing {
+            justify-content: flex-end;
+        }
+
+        /* 气泡 */
+        .bubble {
+            max-width: 80%;
+            padding: 11px 16px;
+            border-radius: 22px;
+            font-size: 15px;
+            line-height: 1.45;
+            word-break: break-word;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        /* 对方气泡 */
+        .incoming .bubble {
+            background: #f2f3f9;
+            color: #11131f;
+            border-bottom-left-radius: 6px;
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+            border-bottom-right-radius: 22px;
+            margin-left: 4px;
+        }
+
+        /* 自己气泡 */
+        .outgoing .bubble {
+            background: #5f6af0;
+            color: white;
+            border-bottom-right-radius: 6px;
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+            border-bottom-left-radius: 22px;
+            margin-right: 4px;
+            box-shadow: 0 8px 14px -8px rgba(95, 106, 240, 0.4);
+        }
+
+        /* 时间/状态小标记 */
+        .meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+            margin-top: 5px;
+            font-size: 10.5px;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+        }
+
+        .incoming .meta {
+            color: #8e92a3;
+            justify-content: flex-start;
+            margin-left: 8px;
+        }
+
+        .outgoing .meta {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .double-check {
+            font-size: 12px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* 日期分隔线 (可选) */
+        .date-divider {
+            align-self: center;
+            font-size: 12px;
+            color: #8e92a3;
+            background: #ffffff;
+            padding: 4px 12px;
+            border-radius: 40px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.02);
+            border: 1px solid #eef0f5;
+            margin: 8px 0 6px 0;
+            font-weight: 450;
+            letter-spacing: 0.3px;
+        }
+
+        /* 输入区域 */
+        .chat-input-area {
+            background: #ffffff;
+            border-top: 1px solid #f0f0f5;
+            padding: 14px 16px 16px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            border: none;
+            background: #f5f6fc;
+            padding: 14px 18px;
+            border-radius: 28px;
+            font-size: 15px;
+            color: #11131f;
+            outline: none;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+            font-family: inherit;
+            letter-spacing: -0.2px;
+            border: 1px solid transparent;
+        }
+
+        .chat-input-area input:focus {
+            background: #ffffff;
+            border-color: #5f6af0;
+            box-shadow: 0 0 0 3px rgba(95, 106, 240, 0.15);
+        }
+
+        .chat-input-area input::placeholder {
+            color: #9ca3af;
+            font-weight: 400;
+        }
+
+        .send-btn {
+            background: #5f6af0;
+            border: none;
+            width: 52px;
+            height: 52px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 8px 16px -6px rgba(95, 106, 240, 0.4);
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: #4f5ae0;
+            transform: scale(0.96);
+        }
+
+        .send-btn:active {
+            transform: scale(0.92);
+        }
+
+        .send-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: white;
+            transform: translateX(1px);
+        }
+
+        /* 小头像装饰 - 在接收消息左侧 */
+        .msg-avatar {
+            width: 28px;
+            height: 28px;
+            background: #e2e5f0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5f6af0;
+            font-weight: 600;
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-right: 8px;
+            align-self: flex-end;
+            margin-bottom: 6px;
+        }
+
+        /* 简单响应式 */
+        @media (max-width: 480px) {
+            .dchat {
+                height: 100vh;
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .bubble {
+                max-width: 88%;
+            }
+        }
+
+        /* 动画淡入 */
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-row {
+            animation: fadeSlide 0.2s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="dchat">
+        <!-- 头部：对话名称 + 在线状态 -->
+        <header class="chat-header">
+            <div class="avatar">D</div>
+            <div class="header-info">
+                <h1>
+                    DChat
+                    <span class="status-badge"></span>
+                </h1>
+                <p>在线 · 输入中...</p>
+            </div>
+        </header>
+
+        <!-- 消息滚动区 -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- 日期分隔 -->
+            <div class="date-divider">今天</div>
+
+            <!-- 对方消息 1 -->
+            <div class="message-row incoming">
+                <div class="msg-avatar">D</div>
+                <div class="bubble">
+                    嘿！欢迎来到 DChat ✨
+                    <div class="meta">
+                        <span>09:41</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我方消息 1 -->
+            <div class="message-row outgoing">
+                <div class="bubble">
+                    看起来挺酷的，这是一个新聊天应用？
+                    <div class="meta">
+                        <span>09:42</span>
+                        <span class="double-check">✓✓</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对方消息 2 -->
+            <div class="message-row incoming">
+                <div class="msg-avatar">D</div>
+                <div class="bubble">
+                    没错，完全从零设计的 DChat，干净又快速。
+                    <div class="meta">
+                        <span>09:43</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对方消息 3 (更长的文本) -->
+            <div class="message-row incoming">
+                <div class="msg-avatar">D</div>
+                <div class="bubble">
+                    它支持实时气泡、优雅的暗色模式，并且所有消息都有已读回执。
+                    <div class="meta">
+                        <span>09:44</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我方消息 2 -->
+            <div class="message-row outgoing">
+                <div class="bubble">
+                    设计真的很简洁，我喜欢这个配色！
+                    <div class="meta">
+                        <span>09:45</span>
+                        <span class="double-check">✓✓</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对方消息 4 -->
+            <div class="message-row incoming">
+                <div class="msg-avatar">D</div>
+                <div class="bubble">
+                    谢谢！试试发送一条消息吧 👇
+                    <div class="meta">
+                        <span>09:46</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部输入栏 -->
+        <div class="chat-input-area">
+            <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off" aria-label="消息输入框">
+            <button class="send-btn" id="sendButton" aria-label="发送消息">
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+
+            // 获取当前时间，格式 HH:MM
+            function getCurrentTime() {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+
+            // 滚动到底部
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // 添加一条消息
+            function addMessage(text, isOutgoing = true) {
+                if (!text.trim()) return;
+
+                const row = document.createElement('div');
+                row.className = `message-row ${isOutgoing ? 'outgoing' : 'incoming'}`;
+
+                // 如果是接收消息，添加左侧小头像 (为了保持视觉一致)
+                if (!isOutgoing) {
+                    const avatarDiv = document.createElement('div');
+                    avatarDiv.className = 'msg-avatar';
+                    avatarDiv.textContent = 'D';
+                    row.appendChild(avatarDiv);
+                }
+
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.textContent = text;  // 使用 textContent 避免XSS
+
+                // 元信息（时间 + 可选双勾）
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+
+                const timeSpan = document.createElement('span');
+                timeSpan.textContent = getCurrentTime();
+                meta.appendChild(timeSpan);
+
+                if (isOutgoing) {
+                    const checkSpan = document.createElement('span');
+                    checkSpan.className = 'double-check';
+                    checkSpan.textContent = '✓✓';
+                    meta.appendChild(checkSpan);
+                }
+
+                bubble.appendChild(meta);
+                row.appendChild(bubble);
+
+                chatMessages.appendChild(row);
+                scrollToBottom();
+
+                // 如果消息是自己发的，模拟对方自动回复（增加聊天感）
+                if (isOutgoing) {
+                    // 延迟一点点回复，让体验更自然
+                    setTimeout(() => {
+                        // 根据用户消息内容进行简单回复（更有趣）
+                        const userText = text.toLowerCase();
+                        let replyText = '收到！👌';
+
+                        if (userText.includes('你好') || userText.includes('hi') || userText.includes('hello')) {
+                            replyText = '你好呀！👋 很高兴和你聊天。';
+                        } else if (userText.includes('名字') || userText.includes('是谁')) {
+                            replyText = '我是 DChat 助手，你可以叫我小D。';
+                        } else if (userText.includes('天气')) {
+                            replyText = '今天天气不错，适合写代码 ☀️';
+                        } else if (userText.includes('功能') || userText.includes('能做什么')) {
+                            replyText = '我可以陪你聊天、提供灵感，还能帮你测试 DChat 的界面 😊';
+                        } else if (userText.includes('再见') || userText.includes('拜拜')) {
+                            replyText = '拜拜，随时回来找我～ 👋';
+                        } else if (userText.includes('喜欢') || userText.includes('爱')) {
+                            replyText = '我也喜欢和你聊天 💙';
+                        } else if (userText.includes('谢谢') || userText.includes('感谢')) {
+                            replyText = '不客气！这是应该的 ✨';
+                        } else if (userText.length > 0) {
+                            // 从简单的回应数组中随机选一个
+                            const replies = [
+                                '有意思，继续说说？',
+                                '嗯嗯，我在听。',
+                                '确实是这样。',
+                                '哈哈，同意！',
+                                '然后呢？🤔',
+                                '我明白你的意思了。',
+                                '这个想法不错～'
+                            ];
+                            // 如果用户输入较长，用通用回复
+                            if (text.length > 15) {
+                                replyText = '你说得对，我也这么觉得。';
+                            } else {
+                                replyText = replies[Math.floor(Math.random() * replies.length)];
+                            }
+                        }
+
+                        // 添加对方回复
+                        const incomingRow = document.createElement('div');
+                        incomingRow.className = 'message-row incoming';
+
+                        const avatarDiv = document.createElement('div');
+                        avatarDiv.className = 'msg-avatar';
+                        avatarDiv.textContent = 'D';
+                        incomingRow.appendChild(avatarDiv);
+
+                        const incomingBubble = document.createElement('div');
+                        incomingBubble.className = 'bubble';
+                        incomingBubble.textContent = replyText;
+
+                        const incomingMeta = document.createElement('div');
+                        incomingMeta.className = 'meta';
+                        const incomingTime = document.createElement('span');
+                        incomingTime.textContent = getCurrentTime();
+                        incomingMeta.appendChild(incomingTime);
+                        incomingBubble.appendChild(incomingMeta);
+
+                        incomingRow.appendChild(incomingBubble);
+                        chatMessages.appendChild(incomingRow);
+                        scrollToBottom();
+                    }, 700); // 0.7秒后回复，比较自然
+                }
+            }
+
+            // 处理发送
+            function handleSend() {
+                const text = messageInput.value.trim();
+                if (text === '') return;
+
+                // 添加自己的消息
+                addMessage(text, true);
+                messageInput.value = '';
+                messageInput.focus();
+            }
+
+            // 监听发送按钮点击
+            sendButton.addEventListener('click', handleSend);
+
+            // 监听回车键
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSend();
+                }
+            });
+
+            // 页面加载后聚焦输入框并滚动到底部
+            window.addEventListener('load', () => {
+                messageInput.focus();
+                scrollToBottom();
+            });
+
+            // 初始滚动一下（防止加载时未对齐）
+            scrollToBottom();
+
+            // 小优化：点击整个聊天区域让输入框聚焦（除了点击按钮和输入框本身）
+            // 但没必要，保留专注
+
+            // 保持滚动到底部（当图片/字体加载导致高度变化时）
+            // 但没什么大问题
+        })();
+    </script>
+</body>
+</html>
